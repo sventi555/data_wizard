@@ -1,10 +1,13 @@
 const express = require('express');
 const BodyParser = require('body-parser');
-const {manageTables} = require('./manage');
+const manageRoutes = require('./manage');
+const genericRoutes = require('./generic_routes');
 
 const app = express();
 app.use(BodyParser.json());
-manageTables(app);
+manageRoutes(app);
+genericRoutes(app);
+
 
 
 app.listen(3000);

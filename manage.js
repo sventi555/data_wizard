@@ -16,7 +16,7 @@ function formatCreateQuery(tableName, fields) {
 	return queryString;
 }
 
-exports.manageTables = function(app) {
+function manageTables(app) {
 	app.get('/api/manage/v1/tables',
 		async (req, res) => {
 			let result;
@@ -91,4 +91,6 @@ exports.manageTables = function(app) {
 			}
 			res.status(204).send();
 		});
-};
+}
+
+module.exports = manageTables;

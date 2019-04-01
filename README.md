@@ -1,2 +1,2 @@
 # data_wizard
-a boilerplate template for table management and their contents in postgres
+a boilerplate template for managing postgres tables and their contents

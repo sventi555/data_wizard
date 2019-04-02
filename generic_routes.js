@@ -60,6 +60,7 @@ function genericRoutes(app) {
 				res.status(400).send('invalid REST url\n');
 			}
 
+			// does the specific document exist?
 			const resource = await resourceExists(parsedUrl);
 			if (!resource) {
 				res.status(404).send('resource does not exist\n');

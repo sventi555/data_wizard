@@ -18,29 +18,41 @@ const validTypes = [
 	/inet/i, /macaddr/i
 ];
 
+function handlePgError(err) {
+	const error = new Error(err.message);
+	error.code = err.code;
+	throw error;
+}
+
 async function query(text, params) {
 	try {
 		const result = await pool.query(text, params);
 		return result;
 	} catch (err) {
-		const error = new Error();
-		error.code = err.code;
-		throw error;
+		handlePgError(err);
 	}
 }
 
 async function getTable(tableName) {
-	const table = await pool.query(`SELECT column_name,data_type 
-									FROM information_schema.columns 
-									WHERE table_name = '${tableName}'`);
-	return table;
+	try {
+		const table = await pool.query(`SELECT column_name,data_type 
+										FROM information_schema.columns 
+										WHERE table_name = '${tableName}'`);
+		return table;
+	} catch (err) {
+		handlePgError(err);
+	}
 }
 
 async function getTables() {
-	const tables = await pool.query(`SELECT * FROM pg_catalog.pg_tables 
-									WHERE schemaname != 'pg_catalog' 
-									AND schemaname != 'information_schema'`);
-	return tables;
+	try {
+		const tables = await pool.query(`SELECT * FROM pg_catalog.pg_tables 
+										WHERE schemaname != 'pg_catalog' 
+										AND schemaname != 'information_schema'`);
+		return tables;
+	} catch (err) {
+		handlePgError(err);
+	}
 }
 
 function typeValidator() {

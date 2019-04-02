@@ -3,7 +3,7 @@ const {celebrate, Joi} = require('celebrate');
 
 function formatCreateQuery(tableName, fields) {
 	let queryString = `CREATE TABLE ${tableName} (`;
-
+	fields.unshift({fieldName: '_id', type: 'serial PRIMARY KEY'});
 	fields.forEach((field, index) => {
 		if (index !== 0) {
 			queryString += ', ';
@@ -33,7 +33,7 @@ function manageTables(app) {
 			body: Joi.object().keys({
 				tableName: Joi.string().min(1).required(),
 				fields: Joi.array().items(Joi.object().keys({
-					fieldName: Joi.string().min(1).required(),
+					fieldName: Joi.string().min(1).invalid('_id').required(),
 					type: Joi.string().required()
 				})).min(1).max(20).required()
 			})
@@ -60,7 +60,7 @@ function manageTables(app) {
 			body: Joi.object().keys({
 				tableName: Joi.string().min(1).required(),
 				fields: Joi.array().items(Joi.object().keys({
-					fieldName: Joi.string().min(1).required(),
+					fieldName: Joi.string().min(1).invalid('_id').required(),
 					type: Joi.string().required()
 				})).min(1).max(20).required()
 			})

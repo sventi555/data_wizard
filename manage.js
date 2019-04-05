@@ -8,8 +8,10 @@ function formatCreateQuery(tableName, fields) {
 		if (index !== 0) {
 			queryString += ', ';
 		}
-		queryString += `${field.fieldName}`;
-		queryString += ` ${field.type}`;
+		queryString += `${field.fieldName} ${field.type}`;
+		if (field.constraint) {
+			queryString += ` ${field.constraint}`;
+		}
 	});
 	queryString += ')';
 
@@ -31,15 +33,16 @@ function manageTables(app) {
 	app.post('/api/manage/v1/tables',
 		celebrate({
 			body: Joi.object().keys({
-				tableName: Joi.string().min(1).required(),
+				tableName: Joi.string().not('').required(),
 				fields: Joi.array().items(Joi.object().keys({
-					fieldName: Joi.string().min(1).invalid('_id').required(),
-					type: Joi.string().required()
-				})).min(1).max(20).required()
+					fieldName: Joi.string().not('').invalid('_id').required(),
+					type: Joi.string().required(),
+					constraint: Joi.string()
+				})).required()
 			})
 		}),
 		pg.typeValidator(),
-		async (req, res) => {
+		async (req, res, next) => {
 			try {
 				const queryString = formatCreateQuery(req.body.tableName, req.body.fields);
 
@@ -47,49 +50,54 @@ function manageTables(app) {
 				const result = await pg.getTable(req.body.tableName);
 				res.send(result.rows);
 			} catch (err) {
-				if (err.code === '42P07') {
-					res.status(409).send();
-				} else {
-					res.status(500).send();
-				}
+				next(err);
 			}
 		});
 
 	app.put('/api/manage/v1/tables',
 		celebrate({
 			body: Joi.object().keys({
-				tableName: Joi.string().min(1).required(),
+				tableName: Joi.string().not('').required(),
 				fields: Joi.array().items(Joi.object().keys({
-					fieldName: Joi.string().min(1).invalid('_id').required(),
-					type: Joi.string().required()
-				})).min(1).max(20).required()
+					fieldName: Joi.string().not('').invalid('_id').required(),
+					type: Joi.string().required(),
+					constraint: Joi.string()
+				})).required()
 			})
 		}),
 		pg.typeValidator(),
-		async (req, res) => {
+		async (req, res, next) => {
 			const table = await pg.getTable(req.body.tableName);
-			if (table.rows.length > 0) {
-				await pg.query(`DROP TABLE ${req.body.tableName}`);
-			}
-			const queryString = formatCreateQuery(req.body.tableName, req.body.fields);
+			try {
+				if (table.rows.length > 0) {
+					await pg.query(`DROP TABLE ${req.body.tableName}`);
+				}
+				const queryString = formatCreateQuery(req.body.tableName, req.body.fields);
 
-			await pg.query(queryString);
-			const result = await pg.getTable(req.body.tableName);
-			res.send(result.rows);
+				await pg.query(queryString);
+				const result = await pg.getTable(req.body.tableName);
+				res.send(result.rows);
+			} catch(err) {
+				next(err);
+			}
 		});
 
 	app.delete('/api/manage/v1/tables',
 		celebrate({
 			body: Joi.object().keys({
-				tableName: Joi.string().required()
+				tableName: Joi.string().not('').required()
 			})
 		}),
-		async (req, res) => {
+		async (req, res, next) => {
 			const table = await pg.getTable(req.body.tableName);
-			if (table.rows.length > 0) {
-				await pg.query(`DROP TABLE ${req.body.tableName}`);
+			try {
+				if (table.rows.length > 0) {
+					await pg.query(`DROP TABLE ${req.body.tableName}`);
+				}
+				res.status(204).send();
+			} catch(err) {
+				next(err);
 			}
-			res.status(204).send();
 		});
 }
 

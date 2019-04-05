@@ -1,6 +1,7 @@
 const {celebrate, Joi} = require('celebrate');
 const pg = require('./pg');
 const parser = require('./parse');
+const {ClientError} = require('./error_middleware');
 
 async function isValidRestUrl(parsedUrl) {
 	for (let i = 0; i < parsedUrl.length; i++) {
@@ -54,17 +55,16 @@ function genericRoutes(app) {
 			const url = req.path;
 			const parsedUrl = parser(url);
 
-			// is it a valid rest url?
-			const validUrl = await isValidRestUrl(parsedUrl);
-			if (!validUrl) {
-				res.status(400).send('invalid REST url\n');
-			}
-
 			try {
+				// is it a valid rest url?
+				const validUrl = await isValidRestUrl(parsedUrl);
+				if (!validUrl) {
+					throw new ClientError(400, 'invalid REST url');
+				}
 				// does the specific document exist?
 				const exists = await resourceExists(parsedUrl);
 				if (!exists) {
-					res.status(404).send('resource does not exist\n');
+					throw new ClientError(404, 'resource does not exist');
 				}
 
 				let queryString;
@@ -96,16 +96,15 @@ function genericRoutes(app) {
 			try {
 				const validUrl = await isValidRestUrl(parsedUrl);
 				if (!validUrl) {
-					res.status(404).send('invalid REST url\n');
+					throw new ClientError(400, 'invalid REST url');
 				}
 
 				if (parsedUrl.length % 2 === 0) {
-					res.status(400).send('you cannot POST to an existing document\n');
+					throw new ClientError(400, 'you cannot POST to an existing document');
 				}
-
 				const exists = await resourceExists(parsedUrl);
 				if (!exists) {
-					res.status(404).send('that collection does not exist\n');
+					throw new ClientError(404, 'that collection does not exist');
 				}
 				const tableName = parsedUrl[parsedUrl.length - 1];
 
@@ -114,7 +113,7 @@ function genericRoutes(app) {
 					VALUES (${Object.values(body).map((value, index) => `$${index + 1}`).toString()})
 				`, Object.values(body));
 
-				res.status(200).send(body);
+				res.status(201).send(body);
 
 			} catch(err) {
 				next(err);
